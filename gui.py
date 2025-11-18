@@ -12,7 +12,6 @@ from highscore import HighScorePanel, ScoreStore, score_key
 class Minesweeper:
     NUMBER_COLORS = {1: "blue", 2: "green", 3: "red", 4: "purple", 5: "brown", 6: "teal", 7: "black", 8: "gray"}
 
-
     CELL_BG = "#E5E7EB"       
     CELL_BG_HOVER = "#D1D5DB" 
     REVEALED_BG = "#F3F4F6"
@@ -27,18 +26,21 @@ class Minesweeper:
         self.rows = rows
         self.cols = cols
         self.mines = mines
+
         self.game = GameCore(self.rows, self.cols, self.mines)
         self.buttons = {}
         self.timer_seconds = 0
         self.timer_job = None
         self.username = "Player"
         scores_path = os.path.join(os.path.dirname(__file__), "user.csv")
+
         self.score_store = ScoreStore(scores_path)
         self.last_win_key = None
         base_dir = os.path.dirname(__file__)
         self.analytics_reports_dir = os.path.join(base_dir, "analytics_reports")
         os.makedirs(self.analytics_reports_dir, exist_ok=True)
         analytics_log_path = os.path.join(base_dir, "analytic.csv")
+
         self.analytics_log = AnalyticsLog(analytics_log_path)
         self.analytics_boards = 100
         self.analytics_mode_var = tk.BooleanVar(value=False)
@@ -105,7 +107,7 @@ class Minesweeper:
         # Default to a valid key in the map
         self.difficulty_var = tk.StringVar(value="Intermediate")
         self.difficulty_map = {
-            "Easy": (5, 5, 2),
+            "Easy": (9, 9, 5),
             "Intermediate": (16, 16, 40),
             "Expert": (16, 30, 99),
         }
