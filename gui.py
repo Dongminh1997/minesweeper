@@ -57,9 +57,7 @@ class Minesweeper:
         self._create_board()
         self._refresh_leaderboard_tab()
 
-    # ---------- UI Construction ----------
     def _build_ui(self):
-        # Compose the main layout: left control column + right notebook (game + scores).
         self.root.configure(bg=self.BOARD_BG)
         self.root.geometry("1200x720")
         self.root.resizable(False, False)
@@ -82,7 +80,6 @@ class Minesweeper:
         self.timer_label = tk.Label(self.side_panel, text="Time: 000", font=self.counter_font, bg=self.PANEL_BG, fg="#111827")
         self.timer_label.pack(fill=tk.X, padx=10, pady=(0, 10), anchor="w")
 
-        # Safe-first toggle
         self.safe_first_var = tk.BooleanVar(value=True)
         self.safe_first_chk = tk.Checkbutton(
             self.side_panel,
@@ -103,8 +100,6 @@ class Minesweeper:
         self.reset_btn = tk.Button(self.side_panel, text="Reset Game", width=10, font=("Segoe UI Emoji", 12), command=self.reset)
         self.reset_btn.pack(fill=tk.X, padx=10, pady=(0, 8))
 
-        # Difficulty selector
-        # Default to a valid key in the map
         self.difficulty_var = tk.StringVar(value="Intermediate")
         self.difficulty_map = {
             "Easy": (9, 9, 5),
@@ -141,7 +136,6 @@ class Minesweeper:
         )
         self._build_analytics_inputs()
 
-        # Notebook keeps the playable board and the leaderboard in two tabs.
         self.content_notebook = ttk.Notebook(self.main_frame)
         self.content_notebook.pack(side=tk.LEFT, padx=(10, 0), fill=tk.BOTH, expand=True)
 
@@ -164,7 +158,6 @@ class Minesweeper:
         self.status = tk.Label(self.root, text="Left-click to reveal, right-click to flag. Press R to reset.", bg=self.BOARD_BG, fg="#374151", font=self.ui_font)
         self.status.pack(padx=10, pady=(0, 6), anchor="w")
 
-        # Keyboard shortcuts
         try:
             self.root.bind("<r>", lambda e: self.reset())
             self.root.bind("<R>", lambda e: self.reset())
@@ -216,7 +209,6 @@ class Minesweeper:
             anchor="w",
         ).pack(fill=tk.X, pady=(4, 0))
 
-        # Start hidden until the toggle is enabled.
         self.analytics_config_frame.pack_forget()
 
     def _toggle_analytics_mode(self):
@@ -238,25 +230,21 @@ class Minesweeper:
             self.last_win_key = None
             self._refresh_leaderboard_tab()
         if hasattr(self, "content_notebook"):
-            # Reset always returns focus to the Game tab.
             self.content_notebook.select(self.game_tab)
         self._stop_timer(reset_seconds=True)
         self._update_counters()
         self.reset_btn.config(text="Reset Game")
 
-        # Responsive cell size so the board fits within the fixed window bounds
         width_limit = self.BOARD_MAX_WIDTH // max(1, self.cols)
         height_limit = self.BOARD_MAX_HEIGHT // max(1, self.rows)
         self.cell_px = max(18, min(48, width_limit, height_limit))
 
-        # Set board frame size and prevent shrinking
         try:
             self.board_frame.config(width=self.cell_px * self.cols, height=self.cell_px * self.rows)
             self.board_frame.grid_propagate(False)
         except Exception:
             pass
 
-        # Configure grid sizes
         for r in range(self.rows):
             self.board_frame.grid_rowconfigure(r, weight=1, uniform="row", minsize=self.cell_px)
         for c in range(self.cols):
@@ -274,35 +262,28 @@ class Minesweeper:
                     relief=tk.RAISED,
                     command=lambda r=r, c=c: self.reveal_cell(r, c),
                 )
-                # Right-click for flag (and middle-click as fallback)
                 b.bind("<Button-3>", lambda e, r=r, c=c: self.toggle_flag(r, c)) #Window
                 b.bind("<Button-2>", lambda e, r=r, c=c: self.toggle_flag(r, c)) #Mac
                 
-                # Hover effects
                 b.bind("<Enter>", lambda e, r=r, c=c: self._hover(r, c, True))
                 b.bind("<Leave>", lambda e, r=r, c=c: self._hover(r, c, False))
                 b.grid(row=r, column=c, sticky="nsew")
                 self.buttons[(r, c)] = b
 
-        # If safe-first is disabled, place mines immediately so first click can hit a mine
         if not getattr(self, "safe_first_var", None) or not self.safe_first_var.get():
             try:
                 self.game.place_mines(first_click=None, safe_first=False)
             except TypeError:
-                # Fallback for older GameCore signature
                 self.game.place_mines(first_click=None)
 
-        # Let window recompute size based on new content
         try:
             self.root.update_idletasks()
         except Exception:
             pass
 
-    # ---------- Game Logic (UI Layer) ----------
     def reveal_cell(self, r, c):
         if self.game.is_game_over:
             return
-        # Start timer on first reveal
         if self.timer_job is None and self.timer_seconds == 0:
             self._start_timer()
         ok = self.game.reveal(r, c)
@@ -360,7 +341,6 @@ class Minesweeper:
         self.last_win_key = score_key(record) if (won and record) else None
         self._refresh_leaderboard_tab()
         if won and hasattr(self, "content_notebook") and hasattr(self, "highscore_panel"):
-            # After a win and confirmation, jump straight to the leaderboard tab.
             self.content_notebook.select(self.highscore_panel.frame)
         self._generate_analytics_report(player_name, won)
 
@@ -442,7 +422,6 @@ class Minesweeper:
         return record
 
     def _build_score_record(self, name, won):
-        # Normalize the payload that is persisted to CSV (and reflected in the Treeview).
         difficulty = getattr(self, "difficulty_var", None)
         difficulty_label = difficulty.get() if difficulty else f"{self.rows}x{self.cols}"
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -478,7 +457,6 @@ class Minesweeper:
         if hasattr(self, "highscore_panel"):
             self.highscore_panel.refresh(self.last_win_key)
 
-    # ---------- Helpers ----------
     def _update_counters(self):
         self.mines_label.config(text=f"Mines: {self.game.flags_left:03d}")
         self.timer_label.config(text=f"Time: {self.timer_seconds:03d}")
@@ -509,14 +487,12 @@ class Minesweeper:
                 pass
             self.timer_job = self.root.after(1000, tick)
 
-        # ensure only one timer
         if self.timer_job is None:
             self.timer_job = self.root.after(1000, tick)
 
     def _on_change_difficulty(self, *_):
         rows, cols, mines = self.difficulty_map[self.difficulty_var.get()]
         self.rows, self.cols, self.mines = rows, cols, mines
-        # Recreate game core with new dimensions
         self.game = GameCore(self.rows, self.cols, self.mines)
         self.reset()
 
