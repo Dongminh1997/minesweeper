@@ -172,6 +172,21 @@ class AnalyticsTab:
 
     def add_record(self, record: dict):
         self.refresh()
+        self.highlight_pdf(record.get("pdf_path", ""))
+
+    def highlight_pdf(self, pdf_path: str):
+        if not pdf_path:
+            return
+        target = os.path.abspath(pdf_path)
+        for item, path in self._item_paths.items():
+            if os.path.abspath(path) == target:
+                try:
+                    self.tree.selection_set(item)
+                    self.tree.focus(item)
+                    self.tree.see(item)
+                except Exception:
+                    pass
+                break
 
     def _open_selected(self):
         selected = self.tree.selection()

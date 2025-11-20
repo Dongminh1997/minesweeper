@@ -102,7 +102,7 @@ class Minesweeper:
 
         self.difficulty_var = tk.StringVar(value="Intermediate")
         self.difficulty_map = {
-            "Easy": (5, 5, 2),
+            "Easy": (9, 9, 5),
             "Intermediate": (16, 16, 40),
             "Expert": (16, 30, 99),
         }
@@ -303,11 +303,12 @@ class Minesweeper:
         self._stop_timer()
         message = "You Win! 🎉" if won else "Game over! 😵"
         messagebox.showinfo("Game Over", message)
-        player_name = self._prompt_for_name()
-        if player_name:
-            self.username = player_name
-        else:
-            player_name = self.username or "Player"
+        player_name = self.username or "Player"
+        if won:
+            prompted = self._prompt_for_name()
+            if prompted:
+                self.username = prompted
+                player_name = prompted
         record = self._save_score(player_name, won)
         self.last_win_key = score_key(record) if (won and record) else None
         self._refresh_leaderboard_tab()
@@ -390,6 +391,11 @@ class Minesweeper:
             messagebox.showwarning("Analytics", f"Could not store analytics record:\n{exc}")
         if hasattr(self, "analytics_tab"):
             self.analytics_tab.add_record(record)
+            try:
+                self.content_notebook.select(self.analytics_tab.frame)
+                self.analytics_tab.highlight_pdf(pdf_path)
+            except Exception:
+                pass
         messagebox.showinfo("Analytics", f"Report saved to {os.path.basename(pdf_path)}")
 
     def _build_score_record(self, name, won):
