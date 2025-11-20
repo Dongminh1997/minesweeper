@@ -21,8 +21,9 @@ class Minesweeper:
     BOARD_MAX_WIDTH = 920
     BOARD_MAX_HEIGHT = 640
 
-    def __init__(self, root, rows=10, cols=10, mines=10):
+    def __init__(self, root, boards=100, rows=10, cols=10, mines=10):
         self.root = root
+        self.boards = boards
         self.rows = rows
         self.cols = cols
         self.mines = mines
@@ -42,8 +43,7 @@ class Minesweeper:
         analytics_log_path = os.path.join(base_dir, "analytic.csv")
 
         self.analytics_log = AnalyticsLog(analytics_log_path)
-        self.analytics_boards = 100
-        self.analytics_mode_var = tk.BooleanVar(value=False)
+        self.analytics_boards_var = tk.StringVar(value="100")
         self.analytics_rows_var = tk.StringVar(value=str(rows))
         self.analytics_cols_var = tk.StringVar(value=str(cols))
         self.analytics_mines_var = tk.StringVar(value=str(mines))
@@ -65,7 +65,7 @@ class Minesweeper:
         self.main_frame = tk.Frame(self.root, bg=self.BOARD_BG)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 10))
 
-        self.side_panel = tk.Frame(self.main_frame, bg=self.PANEL_BG, bd=1, relief=tk.SOLID, highlightthickness=0, width=220)
+        self.side_panel = tk.Frame(self.main_frame, bg=self.PANEL_BG, bd=1, relief=tk.SOLID, highlightthickness=0, width=260)
         self.side_panel.pack(side=tk.LEFT, fill=tk.Y)
         self.side_panel.pack_propagate(False)
 
@@ -102,27 +102,13 @@ class Minesweeper:
 
         self.difficulty_var = tk.StringVar(value="Intermediate")
         self.difficulty_map = {
-            "Easy": (9, 9, 5),
+            "Easy": (5, 5, 2),
             "Intermediate": (16, 16, 40),
             "Expert": (16, 30, 99),
         }
         self.difficulty_menu = tk.OptionMenu(self.side_panel, self.difficulty_var, *self.difficulty_map.keys(), command=self._on_change_difficulty)
         self.difficulty_menu.config(font=("Segoe UI Emoji", 12), width=10)
         self.difficulty_menu.pack(fill=tk.X, padx=10, pady=(0, 10))
-
-        self.analytics_toggle = tk.Checkbutton(
-            self.side_panel,
-            text="Analytics mode",
-            variable=self.analytics_mode_var,
-            onvalue=True,
-            offvalue=False,
-            command=self._toggle_analytics_mode,
-            bg=self.PANEL_BG,
-            font=self.ui_font,
-            anchor="w",
-            justify=tk.LEFT,
-        )
-        self.analytics_toggle.pack(fill=tk.X, padx=12, pady=(0, 6))
 
         self.analytics_config_frame = tk.LabelFrame(
             self.side_panel,
@@ -135,6 +121,14 @@ class Minesweeper:
             pady=4,
         )
         self._build_analytics_inputs()
+        self.analytics_config_frame.pack(fill=tk.X, padx=12, pady=(0, 8))
+
+        tk.Button(
+            self.side_panel,
+            text="Run Analytics",
+            command=self.run_analytics_report,
+            font=self.ui_font,
+        ).pack(fill=tk.X, padx=12, pady=(0, 10))
 
         self.content_notebook = ttk.Notebook(self.main_frame)
         self.content_notebook.pack(side=tk.LEFT, padx=(10, 0), fill=tk.BOTH, expand=True)
@@ -167,7 +161,7 @@ class Minesweeper:
     def _build_analytics_inputs(self):
         tk.Label(
             self.analytics_config_frame,
-            text="Rows / Columns / Mines",
+            text="Boards / Rows / Columns / Mines",
             wraplength=180,
             justify=tk.LEFT,
             bg=self.PANEL_BG,
@@ -178,28 +172,17 @@ class Minesweeper:
         inputs_frame = tk.Frame(self.analytics_config_frame, bg=self.PANEL_BG)
         inputs_frame.pack(fill=tk.X)
 
-        def bind_entry(var):
-            def on_change(*_):
-                settings = self._get_analytics_settings(show_errors=False)
-                if settings:
-                    rows, cols, mines = settings
-                    self.analytics_rows_var.set(str(rows))
-                    self.analytics_cols_var.set(str(cols))
-                    self.analytics_mines_var.set(str(mines))
-            var.trace_add("write", on_change)
-
         for label, var in (
+            ("Boards", self.analytics_boards_var),
             ("Rows", self.analytics_rows_var),
             ("Columns", self.analytics_cols_var),
             ("Mines", self.analytics_mines_var),
         ):
             wrapper = tk.Frame(inputs_frame, bg=self.PANEL_BG)
             tk.Label(wrapper, text=label, bg=self.PANEL_BG, font=("Segoe UI", 10)).pack(anchor="w")
-            bind_entry(var)
             entry = tk.Entry(wrapper, textvariable=var, width=6, justify="center")
             entry.pack(anchor="w")
             wrapper.pack(side=tk.LEFT, padx=(0, 8))
-
         tk.Label(
             self.analytics_config_frame,
             text="Mines must be less than cells",
@@ -208,18 +191,6 @@ class Minesweeper:
             font=("Segoe UI", 9),
             anchor="w",
         ).pack(fill=tk.X, pady=(4, 0))
-
-        self.analytics_config_frame.pack_forget()
-
-    def _toggle_analytics_mode(self):
-        if self.analytics_mode_var.get():
-            self.analytics_rows_var.set(str(self.rows))
-            self.analytics_cols_var.set(str(self.cols))
-            self.analytics_mines_var.set(str(self.mines))
-            self.analytics_config_frame.pack(fill=tk.X, padx=12, pady=(0, 8))
-        else:
-            self.analytics_config_frame.pack_forget()
-
 
     def _create_board(self):
         for w in self.board_frame.winfo_children():
@@ -342,7 +313,6 @@ class Minesweeper:
         self._refresh_leaderboard_tab()
         if won and hasattr(self, "content_notebook") and hasattr(self, "highscore_panel"):
             self.content_notebook.select(self.highscore_panel.frame)
-        self._generate_analytics_report(player_name, won)
 
     def _prompt_for_name(self):
         try:
@@ -360,12 +330,15 @@ class Minesweeper:
             return None
 
     def _get_board_config(self):
-        return {"rows": self.rows, "cols": self.cols, "mines": self.mines}
+        return {
+            "rows": self.rows,
+            "cols": self.cols,
+            "mines": self.mines,
+        }
 
     def _get_analytics_settings(self, show_errors=True):
-        if not self.analytics_mode_var.get():
-            return None
         try:
+            boards = int(self.analytics_boards_var.get())
             rows = int(self.analytics_rows_var.get())
             cols = int(self.analytics_cols_var.get())
             mines = int(self.analytics_mines_var.get())
@@ -373,9 +346,9 @@ class Minesweeper:
             if show_errors:
                 messagebox.showwarning("Analytics", "Analytics settings must be integers.")
             return None
-        if rows <= 0 or cols <= 0:
+        if boards <= 0 or rows <= 0 or cols <= 0:
             if show_errors:
-                messagebox.showwarning("Analytics", "Rows and columns must be positive.")
+                messagebox.showwarning("Analytics", "Boards, Rows and columns must be positive.")
             return None
         if mines < 0:
             if show_errors:
@@ -385,33 +358,31 @@ class Minesweeper:
             if show_errors:
                 messagebox.showwarning("Analytics", "Mines must be less than the number of cells.")
             return None
-        return rows, cols, mines
+        return boards, rows, cols, mines
 
-    def _generate_analytics_report(self, player_name, won):
+    def run_analytics_report(self):
         settings = self._get_analytics_settings()
         if not settings:
-            return None
-        rows, cols, mines = settings
+            return
+        boards, rows, cols, mines = settings
         now = datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         unix_suffix = str(int(now.timestamp()))
-        safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", player_name or "Player").strip("_") or "Player"
+        safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", self.username or "Player").strip("_") or "Player"
         filename = f"{safe_name}_{unix_suffix}.pdf"
         pdf_path = os.path.join(self.analytics_reports_dir, filename)
         try:
-            generate_report(rows, cols, mines, self.analytics_boards, pdf_path)
+            generate_report(rows, cols, mines, boards, pdf_path)
         except Exception as exc:
             messagebox.showwarning("Analytics", f"Failed to build analytics report:\n{exc}")
-            return None
+            return
         record = {
             "created_at": timestamp,
-            "name": player_name,
-            "pdf_path": pdf_path,
-            "time_seconds": self.timer_seconds,
+            "boards": boards,
             "rows": rows,
             "cols": cols,
             "mines": mines,
-            "won": bool(won),
+            "pdf_path": pdf_path,
         }
         try:
             self.analytics_log.append(record)
@@ -419,7 +390,7 @@ class Minesweeper:
             messagebox.showwarning("Analytics", f"Could not store analytics record:\n{exc}")
         if hasattr(self, "analytics_tab"):
             self.analytics_tab.add_record(record)
-        return record
+        messagebox.showinfo("Analytics", f"Report saved to {os.path.basename(pdf_path)}")
 
     def _build_score_record(self, name, won):
         difficulty = getattr(self, "difficulty_var", None)

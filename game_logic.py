@@ -8,7 +8,6 @@ class Cell:
         self.is_flagged: bool = False
         self.neighbor_mines: int = 0
 
-
 class GameCore:
     def __init__(self, rows=10, cols=10, mines=10):
         self.rows = rows

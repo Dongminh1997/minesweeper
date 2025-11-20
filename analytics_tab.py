@@ -8,13 +8,11 @@ import webbrowser
 
 FIELDNAMES = [
     "created_at",
-    "name",
-    "pdf_path",
-    "time_seconds",
+    "boards",
     "rows",
     "cols",
     "mines",
-    "won",
+    "pdf_path",
 ]
 
 
@@ -25,41 +23,37 @@ class AnalyticsLog:
 
     def _ensure_file(self):
         if not os.path.exists(self.path):
-            with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
-                writer.writeheader()
+            self._write_header()
             return
         with open(self.path, newline="", encoding="utf-8") as csvfile:
-            reader = csv.reader(csvfile)
+            reader = csv.DictReader(csvfile)
             rows = list(reader)
-        if not rows:
-            with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
-                writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
-                writer.writeheader()
+            header = reader.fieldnames or []
+        if not header:
+            self._write_header()
             return
-        header = rows[0]
         if header == FIELDNAMES:
             return
-        converted = []
-        for row in rows:
-            if len(row) < len(FIELDNAMES):
-                continue
-            converted.append(
-                {
-                    "created_at": row[0],
-                    "name": row[1],
-                    "pdf_path": row[2],
-                    "time_seconds": row[3],
-                    "rows": row[4],
-                    "cols": row[5],
-                    "mines": row[6],
-                    "won": row[7],
-                }
-            )
+        converted = [self._convert_row(row) for row in rows]
         with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
             writer.writeheader()
             writer.writerows(converted)
+
+    def _write_header(self):
+        with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+            writer.writeheader()
+
+    def _convert_row(self, row: dict):
+        return {
+            "created_at": row.get("created_at") or row.get("timestamp") or "",
+            "boards": self._to_int(row.get("boards")),
+            "rows": self._to_int(row.get("rows")),
+            "cols": self._to_int(row.get("cols")),
+            "mines": self._to_int(row.get("mines")),
+            "pdf_path": row.get("pdf_path") or row.get("pdf") or "",
+        }
 
     def append(self, record: dict):
         with open(self.path, "a", newline="", encoding="utf-8") as csvfile:
@@ -73,7 +67,10 @@ class AnalyticsLog:
             reader = csv.DictReader(csvfile)
             rows = []
             for row in reader:
-                row["time_seconds"] = self._to_int(row.get("time_seconds"))
+                row["boards"] = self._to_int(row.get("boards"))
+                row["rows"] = self._to_int(row.get("rows"))
+                row["cols"] = self._to_int(row.get("cols"))
+                row["mines"] = self._to_int(row.get("mines"))
                 rows.append(row)
         rows.sort(key=lambda r: r.get("created_at", ""), reverse=True)
         return rows
@@ -111,15 +108,17 @@ class AnalyticsTab:
         table_frame = tk.Frame(self.frame, bg=self.panel_bg)
         table_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
 
-        columns = ("name", "timestamp", "time", "pdf")
+        columns = ("timestamp", "boards", "rows", "mines", "pdf")
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=12)
-        self.tree.heading("name", text="Player")
         self.tree.heading("timestamp", text="Timestamp")
-        self.tree.heading("time", text="Time (s)")
-        self.tree.heading("pdf", text="Analytics PDF")
-        self.tree.column("name", width=150, anchor=tk.W)
-        self.tree.column("timestamp", width=160, anchor=tk.W)
-        self.tree.column("time", width=80, anchor=tk.CENTER)
+        self.tree.heading("boards", text="Boards")
+        self.tree.heading("rows", text="Rows")
+        self.tree.heading("mines", text="Mines")
+        self.tree.heading("pdf", text="PDF File")
+        self.tree.column("timestamp", width=170, anchor=tk.W)
+        self.tree.column("boards", width=90, anchor=tk.CENTER)
+        self.tree.column("rows", width=90, anchor=tk.CENTER)
+        self.tree.column("mines", width=90, anchor=tk.CENTER)
         self.tree.column("pdf", width=320, anchor=tk.W)
 
         scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
@@ -161,9 +160,10 @@ class AnalyticsTab:
                 "",
                 "end",
                 values=(
-                    record.get("name", "Player"),
                     record.get("created_at", ""),
-                    record.get("time_seconds", 0),
+                    record.get("boards", 0),
+                    record.get("rows", 0),
+                    record.get("mines", 0),
                     display_pdf,
                 ),
             )
