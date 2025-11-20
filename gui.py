@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
@@ -65,7 +66,8 @@ class Minesweeper:
         self.main_frame = tk.Frame(self.root, bg=self.BOARD_BG)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 10))
 
-        self.side_panel = tk.Frame(self.main_frame, bg=self.PANEL_BG, bd=1, relief=tk.SOLID, highlightthickness=0, width=260)
+        sidebar_width = 280 if sys.platform == "darwin" else 260
+        self.side_panel = tk.Frame(self.main_frame, bg=self.PANEL_BG, bd=1, relief=tk.SOLID, highlightthickness=0, width=sidebar_width)
         self.side_panel.pack(side=tk.LEFT, fill=tk.Y)
         self.side_panel.pack_propagate(False)
 
