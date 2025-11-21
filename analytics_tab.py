@@ -2,6 +2,7 @@
 
 import csv
 import os
+import sys
 import tkinter as tk
 from tkinter import messagebox, ttk
 import webbrowser
@@ -205,6 +206,9 @@ class AnalyticsTab:
             messagebox.showwarning("Analytics", f"File not found:\n{pdf_path}")
             return
         try:
-            webbrowser.open_new(pdf_path)
+            target = pdf_path
+            if sys.platform == "darwin":
+                target = f"file://{os.path.abspath(pdf_path)}"
+            webbrowser.open_new(target)
         except Exception as exc:
             messagebox.showwarning("Analytics", f"Could not open file:\n{exc}")

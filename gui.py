@@ -50,9 +50,14 @@ class Minesweeper:
         self.analytics_mines_var = tk.StringVar(value=str(mines))
         self.analytics_config_frame = None
 
-        self.cell_font = ("Segoe UI", 10, "bold")
-        self.counter_font = ("Consolas", 14, "bold")
-        self.ui_font = ("Segoe UI", 11)
+        if sys.platform == "darwin":
+            self.cell_font = ("Helvetica", 10, "bold")
+            self.counter_font = ("Menlo", 14, "bold")
+            self.ui_font = ("Helvetica", 11)
+        else:
+            self.cell_font = ("Segoe UI", 10, "bold")
+            self.counter_font = ("Consolas", 14, "bold")
+            self.ui_font = ("Segoe UI", 11)
 
         self.build_ui()
         self.create_board()
@@ -62,6 +67,28 @@ class Minesweeper:
         self.root.configure(bg=self.BOARD_BG)
         self.root.geometry("1200x720")
         self.root.resizable(False, False)
+
+        if sys.platform == "darwin":
+            style = ttk.Style()
+            try:
+                style.theme_use("clam")
+            except Exception:
+                pass
+            style.configure("TNotebook", background=self.BOARD_BG, borderwidth=0, tabmargins=0)
+            style.configure(
+                "TNotebook.Tab",
+                background=self.PANEL_BG,
+                foreground="#111827",
+                padding=(10, 6),
+                borderwidth=0,
+                font=self.ui_font,
+            )
+            style.map(
+                "TNotebook.Tab",
+                background=[("selected", self.BOARD_BG)],
+                foreground=[("selected", "#111827")],
+            )
+            style.configure("TFrame", background=self.BOARD_BG)
 
         self.main_frame = tk.Frame(self.root, bg=self.BOARD_BG)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 10))
@@ -83,6 +110,7 @@ class Minesweeper:
         self.timer_label.pack(fill=tk.X, padx=10, pady=(0, 10), anchor="w")
 
         self.safe_first_var = tk.BooleanVar(value=True)
+        chk_fg = "#000000" if sys.platform == "darwin" else "#111827"
         self.safe_first_chk = tk.Checkbutton(
             self.side_panel,
             text="Safe first",
@@ -91,6 +119,7 @@ class Minesweeper:
             offvalue=False,
             command=self.reset,
             bg=self.PANEL_BG,
+            fg=chk_fg,
             font=self.ui_font,
             highlightthickness=0,
             activebackground=self.PANEL_BG,

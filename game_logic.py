@@ -1,5 +1,4 @@
 import random
-# from dataclasses import dataclass
 
 class Cell:
     def __init__(self):
