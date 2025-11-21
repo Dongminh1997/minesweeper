@@ -305,17 +305,19 @@ class Minesweeper:
         self._stop_timer()
         message = "You Win! 🎉" if won else "Game over! 😵"
         messagebox.showinfo("Game Over", message)
-        player_name = self.username or "Player"
+        record = None
         if won:
             prompted = self._prompt_for_name()
             if prompted:
                 self.username = prompted
-                player_name = prompted
-        record = self._save_score(player_name, won)
-        self.last_win_key = score_key(record) if (won and record) else None
-        self._refresh_leaderboard_tab()
-        if won and hasattr(self, "content_notebook") and hasattr(self, "highscore_panel"):
-            self.content_notebook.select(self.highscore_panel.frame)
+                record = self._save_score(prompted, won)
+                self.last_win_key = score_key(record) if record else None
+                self._refresh_leaderboard_tab()
+                if hasattr(self, "content_notebook") and hasattr(self, "highscore_panel"):
+                    self.content_notebook.select(self.highscore_panel.frame)
+        else:
+            self.last_win_key = None
+            self._refresh_leaderboard_tab()
 
     def _prompt_for_name(self):
         try:

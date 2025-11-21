@@ -108,16 +108,19 @@ class AnalyticsTab:
         table_frame = tk.Frame(self.frame, bg=self.panel_bg)
         table_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
 
-        columns = ("timestamp", "boards", "rows", "mines", "pdf")
+        columns = ("timestamp", "boards", "rows", "columns", "mines", "pdf")
         self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=12)
         self.tree.heading("timestamp", text="Timestamp")
         self.tree.heading("boards", text="Boards")
         self.tree.heading("rows", text="Rows")
+        self.tree.heading("columns", text="Columns")
         self.tree.heading("mines", text="Mines")
         self.tree.heading("pdf", text="PDF File")
+
         self.tree.column("timestamp", width=170, anchor=tk.W)
         self.tree.column("boards", width=90, anchor=tk.CENTER)
         self.tree.column("rows", width=90, anchor=tk.CENTER)
+        self.tree.column("columns", width=90, anchor=tk.CENTER)
         self.tree.column("mines", width=90, anchor=tk.CENTER)
         self.tree.column("pdf", width=320, anchor=tk.W)
 
@@ -163,6 +166,7 @@ class AnalyticsTab:
                     record.get("created_at", ""),
                     record.get("boards", 0),
                     record.get("rows", 0),
+                    record.get("cols", 0),
                     record.get("mines", 0),
                     display_pdf,
                 ),
