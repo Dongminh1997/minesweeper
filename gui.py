@@ -287,7 +287,6 @@ class Minesweeper:
                     relief=tk.RAISED,
                     command=lambda r=r, c=c: self.handle_left_click(r, c),
                 )
-                # Several bindings so users without a discrete right-click can still toggle flags.
                 b.bind("<Button-3>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
                 b.bind("<Button-2>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
                 b.bind("<Control-Button-1>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
