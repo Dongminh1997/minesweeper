@@ -276,9 +276,10 @@ class Minesweeper:
                     relief=tk.RAISED,
                     command=lambda r=r, c=c: self.reveal_cell(r, c),
                 )
-                # Right-click mapping for both Windows (<Button-3>) and macOS trackpad secondary click (<Button-2>).
+                # Right-click mapping for both Windows (<Button-3>) and macOS trackpad secondary click (<Button-2>), plus Ctrl+Click fallback.
                 b.bind("<Button-3>", lambda e, r=r, c=c: self.toggle_flag(r, c))
                 b.bind("<Button-2>", lambda e, r=r, c=c: self.toggle_flag(r, c))
+                b.bind("<Control-Button-1>", lambda e, r=r, c=c: self.toggle_flag(r, c))
 
                 b.bind("<Enter>", lambda e, r=r, c=c: self.hover(r, c, True))
                 b.bind("<Leave>", lambda e, r=r, c=c: self.hover(r, c, False))
