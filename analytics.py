@@ -1,27 +1,10 @@
-import numpy as np
+import os
+
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
-
-
-# def generate_board(rows: int, cols: int, mines: int, rng: np.random.Generator):
-#     if mines < 0 or mines >= rows * cols:
-#         #print("mines must be in [0" ,rows*cols-1+"]")
-#         raise ValueError("mines must be in [0, rows*cols-1]")
-#     # Place mines without replacement
-#     flat_idx = rng.choice(rows * cols, size=mines, replace=False)
-#     #print(flat_idx)
-#     mine_mask = np.zeros(rows * cols, dtype=bool)
-#     #print(mine_mask)
-#     mine_mask[flat_idx] = True
-#     mine_mask = mine_mask.reshape(rows, cols)
-#     #print(mine_mask)
-
-#     # 8-neighbour counts (exclude center)
-#     kernel8 = np.array([[1, 1, 1],
-#                         [1, 0, 1],
-#                         [1, 1, 1]], dtype=int)
-#     numbers = ndimage.convolve(mine_mask.astype(int), kernel8, mode="constant", cval=0)
-#     return mine_mask, numbers.astype(np.int8)
 
 def neighbors(rows: int, cols: int, r: int, c: int):
     for nr in range(max(0, r - 1), min(rows, r + 2)):
@@ -90,6 +73,7 @@ def generate_board(rows: int, cols: int, mines: int, rng: np.random.Generator):
 
 
 def generate_report(rows: int, cols: int, mines: int, boards: int, output_path: str, seed: int | None = 42):
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     rng = np.random.default_rng(seed)
     white_cells_per_board = []
     clusters_per_board = []

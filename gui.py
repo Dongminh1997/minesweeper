@@ -211,9 +211,21 @@ class Minesweeper:
         ):
             wrapper = tk.Frame(inputs_frame, bg=self.PANEL_BG)
             tk.Label(wrapper, text=label, bg=self.PANEL_BG, font=("Segoe UI", 10)).pack(anchor="w")
-            entry = tk.Entry(wrapper, textvariable=var, width=6, justify="center")
-            entry.pack(anchor="w")
-            wrapper.pack(side=tk.LEFT, padx=(0, 8))
+            entry_width = 5 if sys.platform == "darwin" else 6
+            entry = tk.Entry(wrapper, textvariable=var, width=entry_width, justify="center")
+            if sys.platform == "darwin":
+                entry.configure(
+                    bg="#FFFFFF",
+                    fg="#111827",
+                    insertbackground="#111827",
+                    highlightthickness=1,
+                    highlightbackground="#D1D5DB",
+                    highlightcolor="#9CA3AF",
+                    relief=tk.SOLID,
+                    bd=1,
+                )
+            entry.pack(anchor="w", fill=tk.X, expand=True)
+            wrapper.pack(side=tk.LEFT, padx=(0, 6), expand=True, fill=tk.X)
         tk.Label(
             self.analytics_config_frame,
             text="Mines must be less than cells",
