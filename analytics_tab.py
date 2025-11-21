@@ -97,6 +97,25 @@ class AnalyticsTab:
         self.refresh()
 
     def build_ui(self):
+        if sys.platform == "darwin":
+            style = ttk.Style()
+            try:
+                style.theme_use("clam")
+            except Exception:
+                pass
+            style.configure(
+                "Analytics.Treeview",
+                background="#FFFFFF",
+                fieldbackground="#FFFFFF",
+                foreground="#111827",
+                bordercolor="#D1D5DB",
+                rowheight=22,
+            )
+            style.configure("Analytics.Treeview.Heading", background="#F3F4F6", foreground="#111827")
+            tree_style = "Analytics.Treeview"
+        else:
+            tree_style = "Treeview"
+
         tk.Label(
             self.frame,
             text="Analytics Reports",
@@ -110,7 +129,7 @@ class AnalyticsTab:
         table_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=(0, 8))
 
         columns = ("timestamp", "boards", "rows", "columns", "mines", "pdf")
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=12)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=12, style=tree_style)
         self.tree.heading("timestamp", text="Timestamp")
         self.tree.heading("boards", text="Boards")
         self.tree.heading("rows", text="Rows")
