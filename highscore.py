@@ -25,12 +25,39 @@ class ScoreStore:
         self.ensure_file()
 
     def ensure_file(self):
-        if os.path.exists(self.path):
-            self.ensure_log_integrity()
+        if not os.path.exists(self.path):
+            with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+                writer.writeheader()
             return
-        with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
-            writer.writeheader()
+
+        try:
+            with open(self.path, newline="", encoding="utf-8") as csvfile:
+                reader = csv.reader(csvfile)
+                rows = list(reader)
+        except OSError:
+            return
+
+        if not rows:
+            with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+                writer.writeheader()
+            return
+
+        header = rows[0]
+        if header != FIELDNAMES:
+            converted = []
+            for row in rows[1:]:
+                if not row:
+                    continue
+                padded = row + [""] * (len(FIELDNAMES) - len(row))
+                converted.append({field: padded[idx] for idx, field in enumerate(FIELDNAMES)})
+            with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
+                writer.writeheader()
+                writer.writerows(converted)
+
+        self.ensure_log_integrity()
 
     def save(self, record: dict):
         needs_header = not os.path.exists(self.path) or os.path.getsize(self.path) == 0
