@@ -26,6 +26,7 @@ class AnalyticsLog:
         if not os.path.exists(self.path):
             self.write_header()
             return
+        self._ensure_trailing_newline()
         with open(self.path, newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             rows = list(reader)
@@ -82,6 +83,21 @@ class AnalyticsLog:
             return int(value)
         except (TypeError, ValueError):
             return 0
+
+    def _ensure_trailing_newline(self):
+        """Guarantee the CSV ends with a newline so the first record is parsed correctly."""
+        try:
+            with open(self.path, "rb+") as raw:
+                raw.seek(0, os.SEEK_END)
+                size = raw.tell()
+                if size == 0:
+                    return
+                raw.seek(-1, os.SEEK_END)
+                last_char = raw.read(1)
+                if last_char not in (b"\n", b"\r"):
+                    raw.write(b"\n")
+        except OSError:
+            pass
 
 
 class AnalyticsTab:

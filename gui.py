@@ -1,5 +1,4 @@
 import os
-import re
 import sys
 from datetime import datetime
 import tkinter as tk
@@ -131,6 +130,8 @@ class Minesweeper:
         self.reset_btn = tk.Button(self.side_panel, text="Reset Game", width=10, font=("Segoe UI Emoji", 12), command=self.reset)
         self.reset_btn.pack(fill=tk.X, padx=10, pady=(0, 8))
 
+        self.flag_mode_active = False
+
         self.difficulty_var = tk.StringVar(value="Intermediate")
         self.difficulty_map = {
             "Easy": (9, 9, 5),
@@ -180,12 +181,20 @@ class Minesweeper:
         )
         self.content_notebook.add(self.analytics_tab.frame, text="Analytics")
 
-        self.status = tk.Label(self.root, text="Left-click to reveal, right-click to flag. Press R to reset.", bg=self.BOARD_BG, fg="#374151", font=self.ui_font)
+        self.status = tk.Label(
+            self.root,
+            text="Left-click reveals, right-click or Shift+Click flags (press F to toggle flag mode). Press R to reset.",
+            bg=self.BOARD_BG,
+            fg="#374151",
+            font=self.ui_font,
+        )
         self.status.pack(padx=10, pady=(0, 6), anchor="w")
 
         try:
             self.root.bind("<r>", lambda e: self.reset())
             self.root.bind("<R>", lambda e: self.reset())
+            self.root.bind("<f>", lambda e: self.toggle_flag_mode())
+            self.root.bind("<F>", lambda e: self.toggle_flag_mode())
         except Exception:
             pass
 
@@ -259,6 +268,8 @@ class Minesweeper:
         except Exception:
             pass
 
+        self.set_flag_mode(False)
+
         for r in range(self.rows):
             self.board_frame.grid_rowconfigure(r, weight=1, uniform="row", minsize=self.cell_px)
         for c in range(self.cols):
@@ -274,12 +285,13 @@ class Minesweeper:
                     activebackground=self.CELL_BG_HOVER,
                     font=("Segoe UI", font_size, "bold"),
                     relief=tk.RAISED,
-                    command=lambda r=r, c=c: self.reveal_cell(r, c),
+                    command=lambda r=r, c=c: self.handle_left_click(r, c),
                 )
-                # Right-click mapping for both Windows (<Button-3>) and macOS trackpad secondary click (<Button-2>), plus Ctrl+Click fallback.
-                b.bind("<Button-3>", lambda e, r=r, c=c: self.toggle_flag(r, c))
-                b.bind("<Button-2>", lambda e, r=r, c=c: self.toggle_flag(r, c))
-                b.bind("<Control-Button-1>", lambda e, r=r, c=c: self.toggle_flag(r, c))
+                # Several bindings so users without a discrete right-click can still toggle flags.
+                b.bind("<Button-3>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
+                b.bind("<Button-2>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
+                b.bind("<Control-Button-1>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
+                b.bind("<Shift-Button-1>", lambda e, r=r, c=c: self.flag_cell_event(e, r, c))
 
                 b.bind("<Enter>", lambda e, r=r, c=c: self.hover(r, c, True))
                 b.bind("<Leave>", lambda e, r=r, c=c: self.hover(r, c, False))
@@ -297,6 +309,17 @@ class Minesweeper:
         except Exception:
             pass
 
+    def handle_left_click(self, r, c):
+        if self.flag_mode_active:
+            self.toggle_flag(r, c)
+        else:
+            self.reveal_cell(r, c)
+
+    def flag_cell_event(self, _event, r, c):
+        """Used by right/modified clicks to ensure Tk stops processing the event."""
+        self.toggle_flag(r, c)
+        return "break"
+
     def reveal_cell(self, r, c):
         if self.game.is_game_over:
             return
@@ -309,6 +332,12 @@ class Minesweeper:
             self.game_over(False)
         elif self.game.check_win():
             self.game_over(True)
+
+    def toggle_flag_mode(self):
+        self.set_flag_mode(not self.flag_mode_active)
+
+    def set_flag_mode(self, enabled):
+        self.flag_mode_active = bool(enabled)
 
     def toggle_flag(self, r, c):
         if self.game.is_game_over:
@@ -376,13 +405,6 @@ class Minesweeper:
             return name or None
         except Exception:
             return None
-
-    def get_board_config(self):
-        return {
-            "rows": self.rows,
-            "cols": self.cols,
-            "mines": self.mines,
-        }
 
     def get_analytics_settings(self, show_errors=True):
         try:
