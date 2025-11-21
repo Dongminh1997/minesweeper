@@ -26,7 +26,7 @@ class ScoreStore:
 
     def ensure_file(self):
         if os.path.exists(self.path):
-        self.ensure_log_integrity()
+            self.ensure_log_integrity()
             return
         with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
@@ -58,8 +58,8 @@ class ScoreStore:
         def to_int(value, default=0):
             try:
                 return int(value)
-        except (TypeError, ValueError):
-            return default
+            except (TypeError, ValueError):
+                return default
 
         return {
             "name": row.get("name", "Player"),
