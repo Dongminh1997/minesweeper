@@ -54,11 +54,11 @@ class Minesweeper:
         self.counter_font = ("Consolas", 14, "bold")
         self.ui_font = ("Segoe UI", 11)
 
-        self._build_ui()
-        self._create_board()
-        self._refresh_leaderboard_tab()
+        self.build_ui()
+        self.create_board()
+        self.refresh_leaderboard_tab()
 
-    def _build_ui(self):
+    def build_ui(self):
         self.root.configure(bg=self.BOARD_BG)
         self.root.geometry("1200x720")
         self.root.resizable(False, False)
@@ -108,7 +108,7 @@ class Minesweeper:
             "Intermediate": (16, 16, 40),
             "Expert": (16, 30, 99),
         }
-        self.difficulty_menu = tk.OptionMenu(self.side_panel, self.difficulty_var, *self.difficulty_map.keys(), command=self._on_change_difficulty)
+        self.difficulty_menu = tk.OptionMenu(self.side_panel, self.difficulty_var, *self.difficulty_map.keys(), command=self.on_change_difficulty)
         self.difficulty_menu.config(font=("Segoe UI Emoji", 12), width=10)
         self.difficulty_menu.pack(fill=tk.X, padx=10, pady=(0, 10))
 
@@ -122,7 +122,7 @@ class Minesweeper:
             padx=8,
             pady=4,
         )
-        self._build_analytics_inputs()
+        self.build_analytics_inputs()
         self.analytics_config_frame.pack(fill=tk.X, padx=12, pady=(0, 8))
 
         tk.Button(
@@ -160,7 +160,7 @@ class Minesweeper:
         except Exception:
             pass
 
-    def _build_analytics_inputs(self):
+    def build_analytics_inputs(self):
         tk.Label(
             self.analytics_config_frame,
             text="Boards / Rows / Columns / Mines",
@@ -194,18 +194,18 @@ class Minesweeper:
             anchor="w",
         ).pack(fill=tk.X, pady=(4, 0))
 
-    def _create_board(self):
+    def create_board(self):
         for w in self.board_frame.winfo_children():
             w.destroy()
         self.buttons.clear()
         self.game.reset()
         if self.last_win_key is not None:
             self.last_win_key = None
-            self._refresh_leaderboard_tab()
+            self.refresh_leaderboard_tab()
         if hasattr(self, "content_notebook"):
             self.content_notebook.select(self.game_tab)
-        self._stop_timer(reset_seconds=True)
-        self._update_counters()
+        self.stop_timer(reset_seconds=True)
+        self.update_counters()
         self.reset_btn.config(text="Reset Game")
 
         width_limit = self.BOARD_MAX_WIDTH // max(1, self.cols)
@@ -238,8 +238,8 @@ class Minesweeper:
                 b.bind("<Button-3>", lambda e, r=r, c=c: self.toggle_flag(r, c)) #Window
                 b.bind("<Button-2>", lambda e, r=r, c=c: self.toggle_flag(r, c)) #Mac
                 
-                b.bind("<Enter>", lambda e, r=r, c=c: self._hover(r, c, True))
-                b.bind("<Leave>", lambda e, r=r, c=c: self._hover(r, c, False))
+                b.bind("<Enter>", lambda e, r=r, c=c: self.hover(r, c, True))
+                b.bind("<Leave>", lambda e, r=r, c=c: self.hover(r, c, False))
                 b.grid(row=r, column=c, sticky="nsew")
                 self.buttons[(r, c)] = b
 
@@ -258,11 +258,11 @@ class Minesweeper:
         if self.game.is_game_over:
             return
         if self.timer_job is None and self.timer_seconds == 0:
-            self._start_timer()
+            self.start_timer()
         ok = self.game.reveal(r, c)
-        self._refresh_ui()
+        self.refresh_ui()
         if not ok:
-            self._show_mines()
+            self.show_mines()
             self.game_over(False)
         elif self.game.check_win():
             self.game_over(True)
@@ -271,9 +271,9 @@ class Minesweeper:
         if self.game.is_game_over:
             return
         self.game.toggle_flag(r, c)
-        self._refresh_ui()
+        self.refresh_ui()
 
-    def _refresh_ui(self):
+    def refresh_ui(self):
         for r in range(self.rows):
             for c in range(self.cols):
                 cell = self.game.grid[r][c]
@@ -291,9 +291,9 @@ class Minesweeper:
                 else:
                     btn.config(text="", bg=self.CELL_BG)
 
-        self._update_counters()
+        self.update_counters()
 
-    def _show_mines(self):
+    def show_mines(self):
         for r in range(self.rows):
             for c in range(self.cols):
                 cell = self.game.grid[r][c]
@@ -302,24 +302,24 @@ class Minesweeper:
 
     def game_over(self, won):
         self.game.is_game_over = True
-        self._stop_timer()
+        self.stop_timer()
         message = "You Win! 🎉" if won else "Game over! 😵"
         messagebox.showinfo("Game Over", message)
         record = None
         if won:
-            prompted = self._prompt_for_name()
+            prompted = self.prompt_for_name()
             if prompted:
                 self.username = prompted
-                record = self._save_score(prompted, won)
+                record = self.save_score(prompted, won)
                 self.last_win_key = score_key(record) if record else None
-                self._refresh_leaderboard_tab()
+                self.refresh_leaderboard_tab()
                 if hasattr(self, "content_notebook") and hasattr(self, "highscore_panel"):
                     self.content_notebook.select(self.highscore_panel.frame)
         else:
             self.last_win_key = None
-            self._refresh_leaderboard_tab()
+            self.refresh_leaderboard_tab()
 
-    def _prompt_for_name(self):
+    def prompt_for_name(self):
         try:
             name = simpledialog.askstring(
                 "Leaderboard Entry",
@@ -334,14 +334,14 @@ class Minesweeper:
         except Exception:
             return None
 
-    def _get_board_config(self):
+    def get_board_config(self):
         return {
             "rows": self.rows,
             "cols": self.cols,
             "mines": self.mines,
         }
 
-    def _get_analytics_settings(self, show_errors=True):
+    def get_analytics_settings(self, show_errors=True):
         try:
             boards = int(self.analytics_boards_var.get())
             rows = int(self.analytics_rows_var.get())
@@ -366,15 +366,14 @@ class Minesweeper:
         return boards, rows, cols, mines
 
     def run_analytics_report(self):
-        settings = self._get_analytics_settings()
+        settings = self.get_analytics_settings()
         if not settings:
             return
         boards, rows, cols, mines = settings
         now = datetime.now()
         timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
         unix_suffix = str(int(now.timestamp()))
-        safe_name = re.sub(r"[^A-Za-z0-9_-]+", "_", self.username or "Player").strip("_") or "Player"
-        filename = f"{safe_name}_{unix_suffix}.pdf"
+        filename = f"Report_{unix_suffix}.pdf"
         pdf_path = os.path.join(self.analytics_reports_dir, filename)
         try:
             generate_report(rows, cols, mines, boards, pdf_path)
@@ -402,14 +401,14 @@ class Minesweeper:
                 pass
         messagebox.showinfo("Analytics", f"Report saved to {os.path.basename(pdf_path)}")
 
-    def _build_score_record(self, name, won):
+    def build_score_record(self, name, won):
         difficulty = getattr(self, "difficulty_var", None)
         difficulty_label = difficulty.get() if difficulty else f"{self.rows}x{self.cols}"
         created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return {
             "name": name,
             "time_seconds": self.timer_seconds,
-            "white_cells": self._count_white_cells(),
+            "white_cells": self.count_white_cells(),
             "won": "1" if won else "0",
             "difficulty": difficulty_label,
             "rows": self.rows,
@@ -418,7 +417,7 @@ class Minesweeper:
             "created_at": created_at,
         }
 
-    def _count_white_cells(self):
+    def count_white_cells(self):
         count = 0
         for row in self.game.grid:
             for cell in row:
@@ -426,30 +425,30 @@ class Minesweeper:
                     count += 1
         return count
 
-    def _save_score(self, name, won):
-        record = self._build_score_record(name, won)
+    def save_score(self, name, won):
+        record = self.build_score_record(name, won)
         try:
             return self.score_store.save(record)
         except Exception as exc:
             messagebox.showwarning("Leaderboard", str(exc))
             return None
 
-    def _refresh_leaderboard_tab(self):
+    def refresh_leaderboard_tab(self):
         if hasattr(self, "highscore_panel"):
             self.highscore_panel.refresh(self.last_win_key)
 
-    def _update_counters(self):
+    def update_counters(self):
         self.mines_label.config(text=f"Mines: {self.game.flags_left:03d}")
         self.timer_label.config(text=f"Time: {self.timer_seconds:03d}")
 
-    def _hover(self, r, c, is_enter):
+    def hover(self, r, c, is_enter):
         cell = self.game.grid[r][c]
         btn = self.buttons[(r, c)]
         if cell.is_revealed or cell.is_flagged:
             return
         btn.config(bg=self.CELL_BG_HOVER if is_enter else self.CELL_BG)
 
-    def _stop_timer(self, reset_seconds=False):
+    def stop_timer(self, reset_seconds=False):
         if self.timer_job is not None:
             try:
                 self.root.after_cancel(self.timer_job)
@@ -459,7 +458,7 @@ class Minesweeper:
         if reset_seconds:
             self.timer_seconds = 0
 
-    def _start_timer(self):
+    def start_timer(self):
         def tick():
             self.timer_seconds += 1
             try:
@@ -471,14 +470,14 @@ class Minesweeper:
         if self.timer_job is None:
             self.timer_job = self.root.after(1000, tick)
 
-    def _on_change_difficulty(self, *_):
+    def on_change_difficulty(self, *_):
         rows, cols, mines = self.difficulty_map[self.difficulty_var.get()]
         self.rows, self.cols, self.mines = rows, cols, mines
         self.game = GameCore(self.rows, self.cols, self.mines)
         self.reset()
 
     def reset(self):
-        self._create_board()
+        self.create_board()
 
 
 if __name__ == "__main__":

@@ -19,39 +19,39 @@ FIELDNAMES = [
 class AnalyticsLog:
     def __init__(self, path: str):
         self.path = path
-        self._ensure_file()
+        self.ensure_file()
 
-    def _ensure_file(self):
+    def ensure_file(self):
         if not os.path.exists(self.path):
-            self._write_header()
+            self.write_header()
             return
         with open(self.path, newline="", encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile)
             rows = list(reader)
             header = reader.fieldnames or []
         if not header:
-            self._write_header()
+            self.write_header()
             return
         if header == FIELDNAMES:
             return
-        converted = [self._convert_row(row) for row in rows]
+        converted = [self.convert_row(row) for row in rows]
         with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
             writer.writeheader()
             writer.writerows(converted)
 
-    def _write_header(self):
+    def write_header(self):
         with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=FIELDNAMES)
             writer.writeheader()
 
-    def _convert_row(self, row: dict):
+    def convert_row(self, row: dict):
         return {
             "created_at": row.get("created_at") or row.get("timestamp") or "",
-            "boards": self._to_int(row.get("boards")),
-            "rows": self._to_int(row.get("rows")),
-            "cols": self._to_int(row.get("cols")),
-            "mines": self._to_int(row.get("mines")),
+            "boards": self.to_int(row.get("boards")),
+            "rows": self.to_int(row.get("rows")),
+            "cols": self.to_int(row.get("cols")),
+            "mines": self.to_int(row.get("mines")),
             "pdf_path": row.get("pdf_path") or row.get("pdf") or "",
         }
 
@@ -67,16 +67,16 @@ class AnalyticsLog:
             reader = csv.DictReader(csvfile)
             rows = []
             for row in reader:
-                row["boards"] = self._to_int(row.get("boards"))
-                row["rows"] = self._to_int(row.get("rows"))
-                row["cols"] = self._to_int(row.get("cols"))
-                row["mines"] = self._to_int(row.get("mines"))
+                row["boards"] = self.to_int(row.get("boards"))
+                row["rows"] = self.to_int(row.get("rows"))
+                row["cols"] = self.to_int(row.get("cols"))
+                row["mines"] = self.to_int(row.get("mines"))
                 rows.append(row)
         rows.sort(key=lambda r: r.get("created_at", ""), reverse=True)
         return rows
 
     @staticmethod
-    def _to_int(value):
+    def to_int(value):
         try:
             return int(value)
         except (TypeError, ValueError):
@@ -92,10 +92,10 @@ class AnalyticsTab:
         self.status_var = tk.StringVar(value="Analytics reports will appear here.")
         self.tree = None
         self._item_paths = {}
-        self._build_ui()
+        self.build_ui()
         self.refresh()
 
-    def _build_ui(self):
+    def build_ui(self):
         tk.Label(
             self.frame,
             text="Analytics Reports",
@@ -135,7 +135,7 @@ class AnalyticsTab:
         tk.Button(
             controls,
             text="Open Selected Report",
-            command=self._open_selected,
+            command=self.open_selected,
             font=self.ui_font,
             width=20,
         ).pack(side=tk.LEFT)
@@ -192,7 +192,7 @@ class AnalyticsTab:
                     pass
                 break
 
-    def _open_selected(self):
+    def open_selected(self):
         selected = self.tree.selection()
         if not selected:
             messagebox.showinfo("Analytics", "Select a report to open.")

@@ -22,9 +22,9 @@ FIELDNAMES = [
 class ScoreStore:
     def __init__(self, path: str):
         self.path = path
-        self._ensure_file()
+        self.ensure_file()
 
-    def _ensure_file(self):
+    def ensure_file(self):
         if os.path.exists(self.path):
             return
         with open(self.path, "w", newline="", encoding="utf-8") as csvfile:
@@ -49,11 +49,11 @@ class ScoreStore:
         try:
             with open(self.path, newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                return [self._normalise(row) for row in reader if row]
+                return [self.normalise(row) for row in reader if row]
         except OSError as exc:
             raise Exception(f"Could not read leaderboard: {exc}") from exc
 
-    def _normalise(self, row):
+    def normalise(self, row):
         def to_int(value, default=0):
             try:
                 return int(value)
@@ -91,9 +91,9 @@ class HighScorePanel:
         self.frame = tk.Frame(parent, bg=self.panel_bg)
         self.info_label = None
         self.tree = None
-        self._build_widgets()
+        self.build_widgets()
 
-    def _build_widgets(self):
+    def build_widgets(self):
         tk.Label(
             self.frame,
             text="High Scores",
